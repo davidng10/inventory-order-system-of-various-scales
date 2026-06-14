@@ -1,9 +1,5 @@
 # Rung 0 — Inventory / Ordering Backend
 
-**What this rung is really teaching:** SQL is not optional, and a database is not a dumb bucket. By the end you should understand what the database is *actually doing* when you hit it concurrently — because everything in distributed systems is a generalization of problems you'll meet here first.
-
----
-
 ## The project
 
 Build a backend for a system that sells a **limited stock of something**: event tickets, concert seats, sneaker drops, limited inventory — your choice of domain, but the constraint must be real: **there is a finite quantity and you must never sell more than you have.**
@@ -16,17 +12,6 @@ Minimum surface:
 - View current stock for a product.
 
 This is a backend (API + database). No frontend required. Don't build auth beyond a fake user id in a header — it's a distraction at this rung.
-
-### SQL on-ramp (do this first, ~4–6 hrs)
-Before the project: hands-on practice with `SELECT`, `JOIN`, `GROUP BY`, `WHERE`, and what an index is. Use an interactive practice site, not a 40-hour video course. The goal is *just enough to start* — you'll learn the rest by hitting walls below.
-
----
-
-## The walls (you MUST trigger these — they are the lesson)
-
-1. **The double-sell.** Two requests buy the last unit at the same instant. Write a test that fires both concurrently. If your naive version oversells, good — now fix it correctly.
-2. **The slow query.** Seed the DB with a few hundred thousand orders. Your order-history query gets slow. Profile it, then fix it with an index. You must see the before/after.
-3. **The cancel race.** A cancel and a second purchase race on the same restored unit. Make sure your fix from wall #1 actually covers this too.
 
 ---
 
@@ -71,6 +56,6 @@ Before the project: hands-on practice with `SELECT`, `JOIN`, `GROUP BY`, `WHERE`
 
 ---
 
-## You've actually learned this rung when…
+## Learnings
 
-You can explain — without notes — why a naive "read stock, then write stock−1" oversells, the three different ways to fix it, and the tradeoff of each. If you can only describe the fix you happened to use, you've learned a recipe, not the concept.
+1. Dockerfile is a build recipe, it describes how to build a custom image. We start FROM a base, add files, install packages, set defaults and then it outputs an image. docker-compose is a run config. It describes hwo to run containers - which image, what ports. If i'm running a stock image, there's no reason to use a Dockerfile. But i can still benefit from docker compose as I wouldnt need to always run docker run...
