@@ -1,5 +1,7 @@
+import psycopg2
+
 def main():
-    print("Hello from rung-0-inventory-ordering-system-basic!")
+    print("done")
 
 
 if __name__ == "__main__":
