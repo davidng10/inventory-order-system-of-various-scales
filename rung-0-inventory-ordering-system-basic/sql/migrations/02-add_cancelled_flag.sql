@@ -1,2 +1,2 @@
 ALTER TABLE product_order
-ADD cancelled boolean DEFAULT false;
+ADD COLUMN IF NOT EXISTS cancelled boolean DEFAULT false;

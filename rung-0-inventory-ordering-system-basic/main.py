@@ -15,7 +15,6 @@ db_pool = None
 
 class CreateProductOrderRequest(BaseModel):
     product_id: uuid.UUID
-    user_id: uuid.UUID
     count: int
 
 class CommonHeaders(BaseModel):
@@ -110,43 +109,42 @@ async def get_orders(headers: Annotated[CommonHeaders, Header()], limit: int = 1
 
 
 @app.post("/orders")
-async def create_order(request: CreateProductOrderRequest):
+async def create_order(headers: Annotated[CommonHeaders, Header()], request: CreateProductOrderRequest):
     product_order_dict = request.model_dump()
+    header_dict = dict(headers)
+
     db_connection = db_pool.getconn()
 
+    user_id = header_dict["x_user_id"];
+    product_id = product_order_dict["product_id"];
+    product_count = product_order_dict["count"];
+
     try:
-        get_valid_products_sql = """
-           SELECT * from products WHERE id = %s AND stock >= %s
-        """
-            
         cur = db_connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(get_valid_products_sql, (product_order_dict["product_id"], product_order_dict["count"] ))
-        data = cur.fetchone()
 
-        if data is not None:
-            order_data = (product_order_dict["product_id"], product_order_dict["user_id"], product_order_dict["count"])
-            create_order_sql = """
-                INSERT INTO product_order (product_id, user_id, count)
-                VALUES (%s, %s, %s)
-                RETURNING id;
-            """
-            cur.execute(create_order_sql, order_data)
-            product_order_item = cur.fetchone()
-
-            update_product_stock_data = data["stock"] - product_order_dict["count"]
-
-            update_product_stock_sql = """
-                UPDATE products
-                SET stock = %s
-                WHERE id = %s
-            """
-            cur.execute(update_product_stock_sql, (update_product_stock_data, product_order_dict["product_id"]))
-            db_connection.commit()
-
-            return {"data": product_order_item}
-
-        else:
+        update_product_stock_sql = """
+            UPDATE products
+            SET stock = stock - %s
+            WHERE id = %s
+        """
+        cur.execute(update_product_stock_sql, (product_count, product_id))
+        updatedCount = cur.rowcount
+        if updatedCount == 0:
+            db_connection.rollback()
             raise HTTPException(status_code=400, detail="Product not found or out of stock")
+
+
+        order_data = (product_id, user_id, product_count)
+        create_order_sql = """
+            INSERT INTO product_order (product_id, user_id, count)
+            VALUES (%s, %s, %s)
+            RETURNING id;
+        """
+        cur.execute(create_order_sql, order_data)
+        product_order_item = cur.fetchone()
+        
+        db_connection.commit()
+        return {"data": product_order_item}
         
     except psycopg2.Error as e:
         db_connection.rollback()
