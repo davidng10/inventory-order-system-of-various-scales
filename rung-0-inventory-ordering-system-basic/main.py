@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 import uuid
 
+from services.products import update_product_stock
+
 psycopg2.extras.register_uuid()
 
 db_pool = None
@@ -120,19 +122,11 @@ async def create_order(headers: Annotated[CommonHeaders, Header()], request: Cre
     product_count = product_order_dict["count"];
 
     try:
-        cur = db_connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        update_product_stock_res = update_product_stock(stock=product_count, product_id=product_id)
 
-        update_product_stock_sql = """
-            UPDATE products
-            SET stock = stock - %s
-            WHERE id = %s
-        """
-        cur.execute(update_product_stock_sql, (product_count, product_id))
-        updatedCount = cur.rowcount
-        if updatedCount == 0:
+        if not update_product_stock_res.success:
             db_connection.rollback()
             raise HTTPException(status_code=400, detail="Product not found or out of stock")
-
 
         order_data = (product_id, user_id, product_count)
         create_order_sql = """
