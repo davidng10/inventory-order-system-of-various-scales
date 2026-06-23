@@ -27,10 +27,10 @@ def update_product_stock_service(
     update_product_stock_sql = """
         UPDATE products
         SET stock = stock - %s
-        WHERE id = %s
+        WHERE id = %s AND stock >= %s
     """
 
-    update_product_stock_payload = (stock, product_id)
+    update_product_stock_payload = (stock, product_id, stock)
 
     cursor.execute(update_product_stock_sql, update_product_stock_payload)
 

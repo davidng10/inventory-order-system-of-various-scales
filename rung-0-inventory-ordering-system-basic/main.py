@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
         dbname="inventory-order-sys",
         user="postgres",
         password="postgres",
-        port=5432,
+        port=5433,
     )
 
     yield  # The app serves requests while paused here
@@ -67,6 +67,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/")
+async def get_root_api():
+    return {"message": "ok"}
 
 
 @app.get("/product/{product_id}/stock")

@@ -8,4 +8,5 @@ dependencies = [
     "fastapi[standard]>=0.137.1",
     "psycopg2-binary>=2.9.12",
     "pydantic>=2.13.4",
+    "requests>=2.34.2",
 ]

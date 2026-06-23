@@ -32,15 +32,22 @@ This is a backend (API + database). No frontend required. Don't build auth beyon
 
 1. Walk through, step by step, what happens *at the database* when two requests try to buy the last unit at the same moment. What does the DB do, what does your application code do, and where exactly is the danger window?
 
-   **Your answer:**
+   **Your answer:** This is called a lost update problem, where 2 concurrent transactions read the exact same data and modify it. If this modification query does not have any safeguards, you may end up with invalid data - e.g. invalid balances. How this happens is for postgres: only 1 transaction can occur at any given time per data field (FYI, all queries in postgres are a transaction as they are all wrapped in it's own tiny transaction even if you do not create one manually). In isolation level read commited, transaction 2 gets blocked and waits for transaction 1, so in situations where you have data that is of a balance type, you may have data issues that do not fulfill business logic if there are no safeguards, e.g. product stock balance going negative. 
 
 2. How did you prevent the double-sell — `SELECT ... FOR UPDATE`, optimistic concurrency with a version column, a `CHECK`/unique constraint, an atomic `UPDATE ... WHERE stock >= n`, something else? Why that mechanism and not the others? What does your choice **cost** (throughput, lock contention, retries)?
 
-   **Your answer:**
+   **Your answer:** atomic query was chosen
 
 3. What isolation level is your database running at by default? Name one concurrency anomaly that is *possible* at that level, and say whether your design tolerates it or prevents it — and why that's the right call here.
 
-   **Your answer:**
+   **Your answer: read commited. It is the default transaction isolation level, while it blocks dirty reads, it takes a new snapshot at the beginning of each SQL, which leaves transactions vulnerable to 3 major concurrency anomalies - non-repeateable reads, phantom reads and serialisation anomalies.
+   
+   - Non-repeateable reads -> Re-reading the same row returns updated value because another transaction commited in between
+   
+   - phantom reads -> Re-executing a query returns new matching rows inserted and commited by another transaction.
+
+   - serialisation (Write skew) -> Overlapping updates violate business rule
+   **
 
 4. Show the query plan for your order-history query before and after you added the index. In plain language: what was the database doing before (and why was it slow), and what does the index let it do instead?
 
